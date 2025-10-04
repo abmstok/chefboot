@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ChefBot 🍳 (Spoonacular)</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>👩‍🍳 Chatbot Resep Makanan ABM Official Channel </h1>
+    <p>Cari resep berdasarkan nama makanan atau bahan.</p>
+
+    <input type="text" id="query" placeholder="Contoh: pasta, chicken, soup...">
+    <button onclick="searchRecipe()">🔍 Cari</button>
+
+    <div id="results"></div>
+    <div id="detail"></div>
+  </div>
+
+  <script>
+    async function searchRecipe() {
+      let q = document.getElementById("query").value;
+      let res = await fetch("/search", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({query: q})
+      });
+      let data = await res.json();
+
+      let container = document.getElementById("results");
+      let detailBox = document.getElementById("detail");
+      container.innerHTML = "";
+      detailBox.innerHTML = "";
+
+      if(data.length === 0){
+        container.innerHTML = "<p>😅 Resep tidak ditemukan</p>";
+        return;
+      }
+
+      data.forEach(item => {
+        let div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <h3>${item.title}</h3>
+          <img src="${item.image}" width="150">
+          <button onclick="getDetail('${item.id}')">📖 Detail</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function getDetail(id) {
+      let res = await fetch("/detail/" + id);
+      let data = await res.json();
+
+      let detailBox = document.getElementById("detail");
+      detailBox.innerHTML = `
+        <h2>${data.title}</h2>
+        <img src="${data.image}" width="300">
+        <p><b>Servings:</b> ${data.servings}</p>
+        <p><b>Ready in:</b> ${data.readyInMinutes} minutes</p>
+        <h3>Bahan:</h3>
+        <ul>
+          ${data.extendedIngredients.map(i => `<li>${i.original}</li>`).join("")}
+        </ul>
+        <h3>Langkah:</h3>
+        <p>${data.instructions || "Tidak ada instruksi."}</p>
+      `;
+    }
+  </script>
+</body>
+</html>
