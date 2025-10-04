@@ -2,76 +2,57 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ChefBot 🍳 (Spoonacular - GitHub Pages)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>👩‍🍳 Chatbot Resep ABM</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f5f5f7; text-align: center; padding: 20px; }
-    .container { max-width: 800px; margin: auto; }
-    input { padding: 10px; width: 60%; border-radius: 10px; border: 1px solid #ccc; }
-    button { padding: 10px 20px; border-radius: 10px; border: none; background: black; color: white; cursor: pointer; }
-    button:hover { background: #333; }
-    .card { background: white; padding: 15px; margin: 10px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    body { font-family: Arial, sans-serif; text-align: center; margin: 30px; }
+    input, button { padding: 10px; margin: 5px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin: 10px auto; max-width: 500px; text-align: left; }
+    img { max-width: 100%; border-radius: 8px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>👩‍🍳 ChefBot Spoonacular</h1>
-    <p>Cari resep berdasarkan nama makanan atau bahan.</p>
+  <h1>👩‍🍳 Chatbot Resep Makanan</h1>
+  <p>Cari resep berdasarkan nama makanan atau bahan.</p>
 
-    <input type="text" id="query" placeholder="Contoh: pasta, chicken, soup...">
-    <button onclick="searchRecipe()">🔍 Cari</button>
+  <input type="text" id="query" placeholder="contoh: banana">
+  <button onclick="cariResep()">🔍 Cari</button>
 
-    <div id="results"></div>
-    <div id="detail"></div>
-  </div>
+  <div id="hasil"></div>
 
   <script>
-    const API_KEY = "af6667696ac44449b32df1025b315db4"; // ganti dengan API key kamu
+    const API_KEY = "YOUR_SPOONACULAR_API_KEY"; // ganti dengan API key kamu
 
-    async function searchRecipe() {
-      let q = document.getElementById("query").value;
-      let res = await fetch(`https://api.spoonacular.com/recipes/complexSearch?query=${q}&number=5&apiKey=${API_KEY}`);
-      let data = await res.json();
+    async function cariResep() {
+      const query = document.getElementById("query").value;
+      const url = `https://api.spoonacular.com/recipes/complexSearch?query=${query}&number=5&apiKey=${API_KEY}`;
+      
+      document.getElementById("hasil").innerHTML = "⏳ Sedang mencari...";
+      
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
 
-      let container = document.getElementById("results");
-      let detailBox = document.getElementById("detail");
-      container.innerHTML = "";
-      detailBox.innerHTML = "";
+        if (!data.results || data.results.length === 0) {
+          document.getElementById("hasil").innerHTML = "😅 Tidak ada resep ditemukan.";
+          return;
+        }
 
-      if(!data.results || data.results.length === 0){
-        container.innerHTML = "<p>😅 Resep tidak ditemukan</p>";
-        return;
+        let html = "";
+        data.results.forEach(meal => {
+          html += `
+            <div class="card">
+              <h3>${meal.title}</h3>
+              <img src="${meal.image}" alt="${meal.title}">
+              <p><a href="https://spoonacular.com/recipes/${meal.title.replace(/ /g, "-")}-${meal.id}" target="_blank">📖 Lihat Detail</a></p>
+            </div>
+          `;
+        });
+
+        document.getElementById("hasil").innerHTML = html;
+      } catch (err) {
+        document.getElementById("hasil").innerHTML = "❌ Error: " + err.message;
       }
-
-      data.results.forEach(item => {
-        let div = document.createElement("div");
-        div.className = "card";
-        div.innerHTML = `
-          <h3>${item.title}</h3>
-          <img src="${item.image}" width="150">
-          <button onclick="getDetail('${item.id}')">📖 Detail</button>
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    async function getDetail(id) {
-      let res = await fetch(`https://api.spoonacular.com/recipes/${id}/information?apiKey=${API_KEY}`);
-      let data = await res.json();
-
-      let detailBox = document.getElementById("detail");
-      detailBox.innerHTML = `
-        <h2>${data.title}</h2>
-        <img src="${data.image}" width="300">
-        <p><b>Servings:</b> ${data.servings}</p>
-        <p><b>Ready in:</b> ${data.readyInMinutes} minutes</p>
-        <h3>Bahan:</h3>
-        <ul>
-          ${data.extendedIngredients.map(i => `<li>${i.original}</li>`).join("")}
-        </ul>
-        <h3>Langkah:</h3>
-        <p>${data.instructions || "Tidak ada instruksi."}</p>
-      `;
     }
   </script>
 </body>
